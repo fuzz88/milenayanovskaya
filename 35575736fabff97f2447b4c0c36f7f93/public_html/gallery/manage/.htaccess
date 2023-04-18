@@ -1,4 +1,0 @@
-AuthType Basic
-AuthName "Upload an Image Protected Area"
-AuthUserFile /home/q/q99942ur/q99942ur.beget.tech/public_html/gallery/upload/.htpasswd
-Require valid-user
