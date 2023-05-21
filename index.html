@@ -2,13 +2,86 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Milya Yanovskaya</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Work+Sans:800">
-    <link rel="stylesheet" href="css/dark.css">
 </head>
+<style>
+    * {
+        margin: 0;
+    }
+    #main_canvas {
+        height: 100%;
+        width: 100%;
+        display: block;
+        padding: 0;
+        margin: 0;
+        border: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+}
+</style>
 <body>
-    <h1>Under construction</h1>
-    <canvas id="main"></canvas>
+    <canvas id="main_canvas"></canvas>
 </body>
+<script id="vs" type="notjs">
+    attribute vec4 position;
+    
+    void main() {
+      gl_Position = position;
+    }
+</script>
+<script id="fs" type="notjs">
+    precision mediump float;
+    
+    uniform vec2 resolution;
+    uniform float time;
+    
+    void main() {
+      vec2 uv = gl_FragCoord.xy / resolution;
+      float color = 0.0;
+      // lifted from glslsandbox.com
+      color += sin( uv.x * cos( time / 3.0 ) * 60.0 ) + cos( uv.y * cos( time / 2.80 ) * 10.0 );
+      color += sin( uv.y * sin( time / 2.0 ) * 40.0 ) + cos( uv.x * sin( time / 1.70 ) * 40.0 );
+      color += sin( uv.x * sin( time / 1.0 ) * 10.0 ) + sin( uv.y * sin( time / 3.50 ) * 80.0 );
+      color *= sin( time / 10.0 ) * 0.5;
+    
+      gl_FragColor = vec4( vec3( color * 0.5, sin( color + time / 2.5 ) * 0.75, color ), 1.0 );
+    }
+</script>
+<script type="module">
+    import * as twgl from 'assets/js/twgl.js';
+    let canvas = document.querySelector("#main_canvas")
+    canvas.width = screen.width;
+    canvas.height= screen.height;
+
+    const gl = canvas.getContext("webgl");
+    const programInfo = twgl.createProgramInfo(gl, ["vs", "fs"]);
+
+    const arrays = {
+      position: [-1, -1, 0, 1, -1, 0, -1, 1, 0, -1, 1, 0, 1, -1, 0, 1, 1, 0],
+    };
+    const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
+
+    function render(time) {
+      twgl.resizeCanvasToDisplaySize(gl.canvas);
+      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+      const uniforms = {
+        time: time * 0.001,
+        resolution: [gl.canvas.width, gl.canvas.height],
+      };
+
+      gl.useProgram(programInfo.program);
+      twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
+      twgl.setUniforms(programInfo, uniforms);
+      twgl.drawBufferInfo(gl, bufferInfo);
+
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+  </script>
+<script src="assets/js/twgl.js"></script>
+<script src="assets/js/main.js"></script>
 </html>
