@@ -1,168 +1,115 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="Cache-Control" content="no-cache">
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Milya Yanovskaya</title>
-</head>
-<style>
-  * {
-    margin: 0;
-  }
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <!-- <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="mobile-web-app-capable" content="yes">
 
-  #main_canvas {
-    height: 100%;
-    width: 100%;
-    display: block;
-    padding: 0;
-    margin: 0;
-    border: none;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 1;
-  }
-</style>
+        <link rel="apple-touch-icon" href="logo.png">
+        <link rel="icon" href="logo.png">
 
-<body>
-  <canvas id="main_canvas"></canvas>
-</body>
-<script id="vertex-shader-2d" type="notjs">
-  attribute vec2 a_position;
- 
-  uniform vec2 u_resolution;
- 
-  void main() {
-    // convert the position from pixels to 0.0 to 1.0
-    vec2 zeroToOne = a_position / u_resolution;
- 
-    // convert from 0->1 to 0->2
-    vec2 zeroToTwo = zeroToOne * 2.0;
- 
-    // convert from 0->2 to -1->+1 (clip space)
-    vec2 clipSpace = zeroToTwo - 1.0;
- 
-    gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
-  }
-</script>
-<script id="fragment-shader-2d" type="notjs">
-  precision mediump float;
- 
-  uniform vec4 u_color;
- 
-  void main() {
-    gl_FragColor = u_color;
-  }
-</script>
-<script src="assets/js/webgl-utils.js"></script>
-<script type="module">
-  var image = new Image();
-  image.src = "assets/img/face.jpg";  // MUST BE SAME DOMAIN!!!
-  image.onload = function () {
-    main(image);
-  }
+        <title>WebGL Fluid Simulation</title>
+        <meta name="description" content="A WebGL fluid simulation that works in mobile browsers.">
 
+        <meta property="og:type" content="website">
+        <meta property="og:title" content="Webgl Fluid Simulation">
+        <meta property="og:description" content="A WebGL fluid simulation that works in mobile browsers.">
+        <meta property="og:url" content="https://paveldogreat.github.io/WebGL-Fluid-Simulation/">
+        <meta property="og:image" content="https://paveldogreat.github.io/WebGL-Fluid-Simulation/logo.png"> -->
 
-"use strict";
+        <script type="text/javascript" src="assets/js/dat.gui.min.js"></script>
 
-function main() {
-  // Get A WebGL context
-  /** @type {HTMLCanvasElement} */
-  var canvas = document.querySelector("#main_canvas");
-  var gl = canvas.getContext("webgl");
-  if (!gl) {
-    return;
-  }
+        <style>
+            @font-face {
+                font-family: 'iconfont';
+                src: url('assets/fonts/iconfont.ttf') format('truetype');
+            }
 
-  // setup GLSL program
-  var program = webglUtils.createProgramFromScripts(gl, ["vertex-shader-2d", "fragment-shader-2d"]);
+            * {
+                user-select: none;
+            }
 
-  // look up where the vertex data needs to go.
-  var positionAttributeLocation = gl.getAttribLocation(program, "a_position");
+            html, body {
+                overflow: hidden;
+                background-color: #000;
+            }
 
-  // look up uniform locations
-  var resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
-  var colorUniformLocation = gl.getUniformLocation(program, "u_color");
+            body {
+                margin: 0;
+                position: fixed;
+                width: 100%;
+                height: 100%;
+            }
 
-  // Create a buffer to put three 2d clip space points in
-  var positionBuffer = gl.createBuffer();
+            canvas {
+                width: 100%;
+                height: 100%;
+                background-color: transparent !important;
+            }
 
-  // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            .dg {
+                opacity: 0.9;
+            }
 
-  webglUtils.resizeCanvasToDisplaySize(gl.canvas);
+            .dg .property-name {
+                overflow: visible;
+            }
 
-  // Tell WebGL how to convert from clip space to pixels
-  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+            .bigFont {
+                font-size: 150%;
+                color: #8C8C8C;
+            }
 
-  // Clear the canvas
-  gl.clearColor(0, 0, 0, 0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
+            .cr.function.appBigFont {
+                font-size: 150%;
+                line-height: 27px;
+                color: #A5F8D3;
+                background-color: #023C40;
+            }
 
-  // Tell it to use our program (pair of shaders)
-  gl.useProgram(program);
+            .cr.function.appBigFont .property-name {
+                float: none;
+            }
 
-  // Turn on the attribute
-  gl.enableVertexAttribArray(positionAttributeLocation);
+            .cr.function.appBigFont .icon {
+                position: sticky;
+                bottom: 27px;
+            }
 
-  // Bind the position buffer.
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            .icon {
+                font-family: 'iconfont';
+                font-size: 130%;
+                float: right;
+            }
 
-  // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
-  var size = 2;          // 2 components per iteration
-  var type = gl.FLOAT;   // the data is 32bit floats
-  var normalize = false; // don't normalize the data
-  var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
-  var offset = 0;        // start at the beginning of the buffer
-  gl.vertexAttribPointer(
-      positionAttributeLocation, size, type, normalize, stride, offset);
+            .link {
+                width: 100%;
+                display: inline-block;
+            }
 
-  // set the resolution
-  gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
+            .link img {
+                width: 100%;
+            }
 
-  // draw 50 random rectangles in random colors
-  for (var ii = 0; ii < 50; ++ii) {
-    // Setup a random rectangle
-    // This will write to positionBuffer because
-    // its the last thing we bound on the ARRAY_BUFFER
-    // bind point
-    setRectangle(
-        gl, randomInt(300), randomInt(300), randomInt(gl.canvas.width - 300), randomInt(gl.canvas.height - 300));
-
-    // Set a random color.
-    gl.uniform4f(colorUniformLocation, Math.random(), Math.random(), Math.random(), 1);
-
-    // Draw the rectangle.
-    var primitiveType = gl.TRIANGLES;
-    var offset = 0;
-    var count = 6;
-    gl.drawArrays(primitiveType, offset, count);
-  }
-}
-
-// Returns a random integer from 0 to range - 1.
-function randomInt(range) {
-  return Math.floor(Math.random() * range);
-}
-
-// Fill the buffer with the values that define a rectangle.
-function setRectangle(gl, x, y, width, height) {
-  var x1 = x;
-  var x2 = x + width;
-  var y1 = y;
-  var y2 = y + height;
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-     x1, y1,
-     x2, y1,
-     x1, y2,
-     x1, y2,
-     x2, y1,
-     x2, y2,
-  ]), gl.STATIC_DRAW);
-}
-
-main();
-</script>
-
+            @keyframes promo-appear-animation {
+                0% {
+                    transform: scale(2.0);
+                    opacity: 0;
+                }
+                100% {
+                    transform: scale(1.0);
+                    opacity: 1;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <canvas></canvas>
+        <script src="assets/js/script.js"></script>
+        <img src="assets/img/layer0.png">
+    </body>
 </html>
