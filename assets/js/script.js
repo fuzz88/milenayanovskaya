@@ -42,11 +42,11 @@ var config = {
     SPLAT_RADIUS: 0.25,
     SPLAT_FORCE: 6000,
     SHADING: true,
-    COLORFUL: true,
+    COLORFUL: false,
     COLOR_UPDATE_SPEED: 10,
     PAUSED: false,
     BACK_COLOR: { r: 0, g: 0, b: 0 },
-    TRANSPARENT: false,
+    TRANSPARENT: true,
     BLOOM: true,
     BLOOM_ITERATIONS: 8,
     BLOOM_RESOLUTION: 256,
@@ -623,7 +623,7 @@ function updateKeywords() {
 
 updateKeywords();
 initFramebuffers();
-multipleSplats(parseInt(Math.random() * 20) + 5);
+multipleSplats(99);
 
 var lastUpdateTime = Date.now();
 var colorUpdateTimer = 0.0;
@@ -768,7 +768,7 @@ function render(target) {
 
     var fbo = target == null ? null : target.fbo;
     if (!config.TRANSPARENT) { drawColor(fbo, normalizeColor(config.BACK_COLOR)); }
-    if (target == null && config.TRANSPARENT) { drawCheckerboard(fbo); }
+    //if (target == null && config.TRANSPARENT) { drawCheckerboard(fbo); }
     drawDisplay(fbo, width, height);
 }
 
