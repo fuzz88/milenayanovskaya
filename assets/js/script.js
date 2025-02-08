@@ -623,7 +623,7 @@ function updateKeywords() {
 
 updateKeywords();
 initFramebuffers();
-multipleSplats(99);
+
 
 var lastUpdateTime = Date.now();
 var colorUpdateTimer = 0.0;
@@ -681,7 +681,15 @@ function applyInputs() {
     });
 }
 
+var timer = 0;
+
 function step(dt) {
+    timer = timer +dt;
+    if (timer > 2) 
+    {
+        timer = 0;
+        multipleSplats(1);
+    }
     gl.disable(gl.BLEND);
     gl.viewport(0, 0, velocity.width, velocity.height);
 
