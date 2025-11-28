@@ -690,7 +690,7 @@ var timer = 0;
 function step(dt) {
     if (!isMobile()) {
         timer = timer +dt;
-        if (timer > 2) 
+        if (timer > 9) 
         {
             timer = 0;
             multipleSplats(1);
